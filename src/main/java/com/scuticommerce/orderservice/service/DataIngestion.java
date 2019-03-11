@@ -5,11 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.scuticommerce.orderservice.model.Order;
+import com.scuticommerce.orderservice.model.OrderItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.SwitchPoint;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,16 +27,16 @@ public class DataIngestion {
     @Autowired
     OrderService orderService;
 
-    public void importData(String folderPath) throws IOException {
+    public void importData(String folderPath, String importType) throws IOException {
 
         try (Stream<Path> paths = Files.walk(Paths.get(
                 folderPath))) {
-              paths.filter(Files::isRegularFile).forEach(p -> readFiles(p, false));
+              paths.filter(Files::isRegularFile).forEach(p -> readFiles(p, false, importType));
         }
 
     }
 
-    private Consumer<? super Path> readFiles(Path path, boolean createFile) {
+    private Consumer<? super Path> readFiles(Path path, boolean createFile, String importType) {
 
         String filePath = path.toString();
         String fileName = path.getFileName().toString();
@@ -48,18 +50,13 @@ public class DataIngestion {
 
             String jsonPayload = convertCSVToJson(filePath,jsonFile, createFile);
 
-            List<?> myObjects =
-                    mapper.readValue(jsonPayload, new TypeReference<List<?>>(){});
+            List<?> myObjects = mapper.readValue(jsonPayload, new TypeReference<List<?>>(){});
 
-            System.out.println(myObjects);
-            for (Object map :myObjects) {
-
-                LinkedHashMap data = (LinkedHashMap)map;
-
-                Order order = getOrder(data);
-
-                orderService.createOrder(order);
-
+            switch (importType.toLowerCase()) {
+                case "order":
+                    createOrderData(myObjects);
+                case "orderitem":
+                    createOrderItemData(myObjects);
             }
 
         } catch (IOException e) {
@@ -67,6 +64,26 @@ public class DataIngestion {
         }
         return null;
 
+    }
+
+    private void createOrderData(List<?> myObjects) {
+
+        for (Object map :myObjects) {
+
+            LinkedHashMap data = (LinkedHashMap)map;
+            Order order = getOrder(data);
+            orderService.createOrder(order);
+        }
+    }
+
+    private void createOrderItemData(List<?> myObjects) {
+
+        for (Object map :myObjects) {
+
+            LinkedHashMap data = (LinkedHashMap)map;
+            OrderItem orderItem = getOrderItem(data);
+            orderService.createOrderItem(orderItem);
+        }
     }
 
     private Order getOrder(LinkedHashMap data) {
@@ -86,6 +103,15 @@ public class DataIngestion {
         order.setCouponCode((String)data.get("CouponCode"));
         order.setDiscountTotal((String)data.get("DiscountTotal"));
         return order;
+    }
+
+    private OrderItem getOrderItem(LinkedHashMap data) {
+
+        OrderItem items = new OrderItem();
+        items.setOrderNumber((String)data.get("order no"));
+        items.setSKU((String)data.get("SKU"));
+
+        return items;
     }
 
     private static String convertCSVToJson(String csvFile, String jsonFile, boolean createFile) throws IOException {

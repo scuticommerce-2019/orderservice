@@ -8,5 +8,7 @@ import java.util.List;
 public class OrderItem {
 
     private List<OrderItem> orderItems;
+    String orderNumber;
+    String SKU;
 
 }

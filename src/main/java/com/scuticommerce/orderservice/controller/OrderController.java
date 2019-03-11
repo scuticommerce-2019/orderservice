@@ -1,6 +1,7 @@
 package com.scuticommerce.orderservice.controller;
 
 import com.scuticommerce.orderservice.model.Order;
+import com.scuticommerce.orderservice.repository.OrderItemRepository;
 import com.scuticommerce.orderservice.repository.OrderRepository;
 import com.scuticommerce.orderservice.service.DataIngestion;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class OrderController {
 
     @Autowired
     OrderRepository repository;
+    @Autowired
+    OrderItemRepository orderItemRepository;
+
 
     @PostMapping(value="/create")
     public ResponseEntity<?> create(@RequestBody Order order){
@@ -45,12 +49,12 @@ public class OrderController {
      * @return
      */
     @GetMapping(value="/load")
-    public ResponseEntity<?> load(@RequestHeader String path){
+    public ResponseEntity<?> load(@RequestHeader String path, @RequestParam String type){
 
         String folderPath = path;
 
         try {
-            dataIngestion.importData(folderPath);
+            dataIngestion.importData(folderPath,type.toLowerCase());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -64,4 +68,11 @@ public class OrderController {
 
         return new ResponseEntity<>(repository.findAll(), HttpStatus.OK);
     }
+
+    @GetMapping(value="/orderItems")
+    public ResponseEntity<?> allItems(){
+
+        return new ResponseEntity<>(orderItemRepository.findAll(), HttpStatus.OK);
+    }
+
 }
