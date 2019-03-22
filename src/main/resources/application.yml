@@ -9,4 +9,4 @@ management:
           enabled: false
 name: Order Service version 1.0
 server:
-  port: 20192
+  port: 21907
