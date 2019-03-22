@@ -1,6 +1,7 @@
 package com.scuticommerce.orderservice.controller;
 
 import com.scuticommerce.orderservice.model.Order;
+import com.scuticommerce.orderservice.model.OrderItem;
 import com.scuticommerce.orderservice.repository.OrderItemRepository;
 import com.scuticommerce.orderservice.repository.OrderRepository;
 import com.scuticommerce.orderservice.service.DataIngestion;
@@ -12,8 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.List;
 
+@CrossOrigin
 @RestController
-@RequestMapping(value="/api/order/")
+@RequestMapping(value="/api/orderservice/")
 public class OrderController {
 
     @Autowired
@@ -66,13 +68,31 @@ public class OrderController {
     @GetMapping(value="/orders")
     public ResponseEntity<?> all(){
 
-        return new ResponseEntity<>(repository.findAll(), HttpStatus.OK);
+       List<Order> orders = repository.findAll();
+
+       int i = 0;
+       for (Order order : orders){
+
+           i++;
+           if(i == 50) break;
+           List<OrderItem> orderItems = orderItemRepository.findByOrderNumber(order.getOrderNumber());
+           order.setItems(orderItems);
+
+       }
+
+        return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
     @GetMapping(value="/orderItems")
     public ResponseEntity<?> allItems(){
 
         return new ResponseEntity<>(orderItemRepository.findAll(), HttpStatus.OK);
+    }
+
+    @GetMapping(value="/status")
+    public ResponseEntity<?> status(){
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
 }

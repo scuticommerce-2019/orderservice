@@ -3,6 +3,8 @@ package com.scuticommerce.orderservice.model;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 
+import java.util.List;
+
 @Data
 public class Order {
 
@@ -22,5 +24,6 @@ public class Order {
     String shippingMethod;
     String couponCode;
     String discountTotal;
+    List<OrderItem> items;
 
 }
